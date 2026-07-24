@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Compass — Global Equity Risk &amp; Return Evaluator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Chart.js and SheetJS are loaded dynamically below, with fallback CDNs, so a single dead link can't blank out the charts silently -->
+
+<style>
+  :root{
+    --bg:#14171a;
+    --panel:#1b1f22;
+    --panel-2:#20252a;
+    --line:#33393f;
+    --line-soft:#282e33;
+    --text:#ece8df;
+    --muted:#8f969d;
+    --gain:#2e9b62;   /* green = positive/gain — standard convention outside Greater China */
+    --loss:#d6473c;   /* red = negative/loss — standard convention outside Greater China */
+    --gold:#c9a227;
+    --blue:#3e7c99;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;line-height:1.5;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0;letter-spacing:-0.01em;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .wrap{max-width:1180px;margin:0 auto;padding:32px 24px 80px;}
+
+  /* header */
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:28px;}
+  header.top .eyebrow{color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:6px;}
+  header.top h1{font-size:30px;font-weight:700;}
+  header.top .sub{color:var(--muted);font-size:14px;max-width:520px;margin-top:6px;}
+  header.top .disclaimer{font-size:11.5px;color:var(--muted);max-width:260px;border-left:2px solid var(--line);padding-left:12px;}
+
+  section{margin-bottom:34px;}
+  .section-head{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;}
+  .section-head .num{font-family:'IBM Plex Mono',monospace;color:var(--gold);font-size:13px;}
+  .section-head h2{font-size:18px;}
+  .section-head .hint{color:var(--muted);font-size:12.5px;margin-left:auto;}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;}
+  .grid-2{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  @media (max-width:860px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.04em;}
+  input[type=text],input[type=number],textarea,select{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    border-radius:8px;padding:9px 10px;font-family:'IBM Plex Mono',monospace;font-size:13px;
+  }
+  textarea{min-height:64px;resize:vertical;font-family:'IBM Plex Mono',monospace;font-size:12px;}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--gold);outline-offset:1px;}
+  .field{margin-bottom:14px;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .field-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  .note{font-size:11.5px;color:var(--muted);margin-top:4px;}
+
+  button{font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:13px;border-radius:8px;border:1px solid var(--line);
+    background:var(--panel-2);color:var(--text);padding:9px 14px;cursor:pointer;transition:border-color .15s, background .15s;}
+  button:hover{border-color:var(--gold);}
+  button:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+  button.primary{background:var(--gold);color:#141414;border-color:var(--gold);}
+  button.primary:hover{filter:brightness(1.08);}
+  button.ghost{background:transparent;}
+  button.small{padding:5px 10px;font-size:12px;}
+  button.danger{color:var(--loss);}
+  button.danger.confirming{background:var(--loss);color:#141414;border-color:var(--loss);font-weight:700;}
+
+  /* stock cards */
+  .stock-card{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:10px;padding:16px;margin-bottom:14px;}
+  .stock-card .row-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;}
+  .stock-card .row-top .names{display:flex;gap:10px;align-items:center;}
+  .stock-card .row-top input{width:auto;min-width:140px;}
+  .tag{font-size:10.5px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--muted);font-family:'IBM Plex Mono',monospace;}
+  .tag.ok{border-color:var(--gain);color:var(--gain);}
+  .tag.warn{border-color:var(--gold);color:var(--gold);}
+  .tag.err{border-color:var(--loss);color:var(--loss);}
+  .mode-toggle{display:flex;gap:6px;}
+  .mode-toggle button{padding:5px 10px;font-size:11.5px;}
+  .mode-toggle button.active{background:var(--gold);color:#141414;border-color:var(--gold);}
+  .calc-strip{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
+  .calc-strip div span.k{color:var(--muted);display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;}
+  .up::before{content:"▲ ";color:var(--gain);}
+  .down::before{content:"▼ ";color:var(--loss);}
+
+  /* stat cards */
+  .stat-card{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:10px;padding:16px;}
+  .stat-card .k{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;}
+  .stat-card .v{font-family:'IBM Plex Mono',monospace;font-size:26px;margin-top:6px;}
+  .stat-card .v.gain{color:var(--gain);}
+  .stat-card .v.loss{color:var(--loss);}
+
+  .verdict{border-radius:10px;padding:18px 20px;border:1px solid var(--line);background:var(--panel-2);}
+  .verdict h3{font-size:15px;margin-bottom:6px;}
+  .verdict .badge{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:3px 10px;border-radius:20px;margin-bottom:10px;}
+  .verdict ul{margin:8px 0 0;padding-left:18px;font-size:13px;color:var(--muted);}
+  .verdict li{margin-bottom:4px;}
+
+  .banner{background:rgba(201,162,39,0.08);border:1px solid var(--gold);color:var(--gold);border-radius:8px;padding:10px 14px;font-size:12.5px;margin-bottom:16px;display:none;}
+  .banner.show{display:block;}
+
+  canvas{max-width:100%;}
+  .chart-box{position:relative;width:100%;height:240px;}
+  footer{color:var(--muted);font-size:11.5px;text-align:center;margin-top:40px;border-top:1px solid var(--line);padding-top:18px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <div class="eyebrow">Global Equity Analytics</div>
+      <h1>Portfolio Compass</h1>
+      <div class="sub">Estimate expected return, volatility, and beta from pasted historical prices — then see whether your portfolio behaves like the market or like an active bet.</div>
+    </div>
+    <div class="disclaimer">Educational calculator, not investment advice. All figures are estimates derived from the data you enter.</div>
+  </header>
+
+  <div id="globalBanner" class="banner"></div>
+
+  <!-- SECTION 1: MARKET INPUTS -->
+  <section>
+    <div class="section-head"><span class="num">01</span><h2>Market &amp; risk-free rate</h2><span class="hint">This anchors every beta and CAPM estimate below</span><button class="ghost small danger" id="resetAllBtnTop" style="margin-left:14px;">Reset all data</button></div>
+    <div class="panel grid-2">
+      <div>
+        <div class="field-row">
+          <div class="field">
+            <label>Benchmark index</label>
+            <input type="text" id="benchName" value="" placeholder="e.g. S&amp;P 500, CSI 300, FTSE 100, Nikkei 225, MSCI World...">
+          </div>
+          <div class="field">
+            <label>Risk-free rate, annualized %</label>
+            <input type="number" id="rf" value="" placeholder="e.g. local 10-year govt. bond yield" step="0.1">
+          </div>
+        </div>
+        <div class="field">
+          <label>Expected market return override, annualized % <span style="text-transform:none;color:var(--muted);">(optional — leave blank to derive from the price history below)</span></label>
+          <input type="text" id="mktOverride" placeholder="e.g. 7.0">
+        </div>
+      </div>
+      <div>
+        <div class="field">
+          <label>Benchmark historical prices (oldest → newest)</label>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+            <input type="file" id="benchCsvUpload" accept=".csv,.txt,.xlsx,.xls" style="font-family:'IBM Plex Sans',sans-serif;font-size:12px;padding:6px;">
+            <span class="tag" id="benchCsvStatus">no file loaded</span>
+          </div>
+          <textarea id="benchPrices" placeholder="Or paste comma/newline separated prices here, e.g. 3450, 3465, 3438, 3502, ..."></textarea>
+          <div class="note">CSV or Excel (.xlsx/.xls) both work — a "close"/"price" (or 收盘) column plus a date column is auto-detected and the rest ignored; a single column of prices with no header also works. For Excel, the first sheet is used. Use the same frequency and date range for every series (e.g. daily closes over the last 1–3 years). Source ideas: Yahoo Finance, Google Finance/Sheets (GOOGLEFINANCE), Investing.com, Stooq, your brokerage's export, or a regional source such as East Money (东方财富)/Wind for China A-shares.</div>
+        </div>
+      </div>
+    </div>
+    <div class="grid-3" style="margin-top:14px;">
+      <div class="stat-card"><div class="k">Benchmark return (ann., historical)</div><div class="v" id="benchStatHistReturn" style="font-size:20px;">–</div></div>
+      <div class="stat-card"><div class="k">Benchmark volatility (ann.)</div><div class="v" id="benchStatVol" style="font-size:20px;">–</div></div>
+      <div class="stat-card"><div class="k">Market return used in CAPM <span style="text-transform:none;">(override or historical)</span></div><div class="v" id="benchStatEffective" style="font-size:20px;">–</div></div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: HOLDINGS -->
+  <section>
+    <div class="section-head"><span class="num">02</span><h2>Holdings</h2><span class="hint">Paste price history for auto-calculation, or switch a stock to manual estimates</span></div>
+    <div class="panel">
+      <div id="stockList"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;">
+        <button class="primary" id="addStockBtn">+ Add holding</button>
+        <button class="ghost" id="loadExampleBtn">Load 3 sample holdings (synthetic demo data)</button>
+        <button class="ghost small" id="normalizeBtn">Normalize weights to 100%</button>
+        <button class="ghost small danger" id="resetAllBtn">Reset all data</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: RESULTS -->
+  <section>
+    <div class="section-head"><span class="num">03</span><h2>Portfolio results</h2></div>
+    <div class="grid-3" style="margin-bottom:18px;">
+      <div class="stat-card"><div class="k">Expected return (annual)</div><div class="v" id="statReturn">–</div></div>
+      <div class="stat-card"><div class="k">Volatility (annual)</div><div class="v" id="statVol">–</div></div>
+      <div class="stat-card"><div class="k">Sharpe ratio</div><div class="v" id="statSharpe">–</div></div>
+      <div class="stat-card"><div class="k">Portfolio beta</div><div class="v" id="statBeta">–</div></div>
+      <div class="stat-card"><div class="k">R² vs benchmark</div><div class="v" id="statR2">–</div></div>
+      <div class="stat-card"><div class="k">Concentration (HHI)</div><div class="v" id="statHHI">–</div></div>
+    </div>
+    <div class="verdict" id="verdictBox">
+      <span class="badge" id="verdictBadge">Add holdings to see a verdict</span>
+      <h3 id="verdictTitle">Is this a market portfolio?</h3>
+      <ul id="verdictList"></ul>
+    </div>
+  </section>
+
+  <!-- SECTION 4: VISUALS -->
+  <section>
+    <div class="section-head"><span class="num">04</span><h2>Visuals</h2></div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3 style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Beta compass</h3>
+        <svg id="betaGauge" viewBox="0 0 200 130" style="width:100%;max-width:320px;display:block;margin:0 auto;"></svg>
+      </div>
+      <div class="panel">
+        <h3 style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Security market line (beta vs. expected return)</h3>
+        <div class="chart-box"><canvas id="smlChart"></canvas></div>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:18px;">
+      <div class="panel">
+        <h3 style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Risk vs. return (total volatility)</h3>
+        <div class="chart-box"><canvas id="riskReturnChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3 style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Sector mix vs. reference</h3>
+        <div class="chart-box" style="height:200px;"><canvas id="sectorChart"></canvas></div>
+        <label style="margin-top:12px;">Reference sector weights <span style="text-transform:none;">(editable, one "Sector:Weight%" per line — enter your own benchmark's published mix for an accurate comparison)</span></label>
+        <textarea id="sectorRef" style="min-height:110px;">Financials:22
+Industrials:15
+Consumer Staples:12
+Information Technology:12
+Health Care:8
+Consumer Discretionary:8
+Materials:8
+Utilities:5
+Energy:4
+Communication Services:3
+Real Estate:3</textarea>
+      </div>
+    </div>
+  </section>
+
+  <footer>Methodology: per-stock beta and volatility are derived from pasted price history via a single-index (market) model; expected return defaults to CAPM (rf + β×(market − rf)) and can be overridden manually. Portfolio variance combines each holding's own volatility with beta-implied co-movement — a standard simplification, not a substitute for a full covariance matrix.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- resilient library loading (fallback across CDNs) ----------
+  let chartLibStatus = "loading"; // 'loading' | 'ready' | 'failed'
+  let xlsxLibStatus = "loading";
+  function loadScriptCascade(urls, onDone){
+    let i = 0;
+    function tryNext(){
+      if(i>=urls.length){ onDone(false); return; }
+      const url = urls[i++];
+      const s = document.createElement("script");
+      s.src = url;
+      s.onload = ()=>onDone(true);
+      s.onerror = ()=>{ s.remove(); tryNext(); };
+      document.head.appendChild(s);
+    }
+    tryNext();
+  }
+  loadScriptCascade([
+    "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js",
+    "https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js",
+    "https://unpkg.com/chart.js@4/dist/chart.umd.min.js"
+  ], (ok)=>{ chartLibStatus = ok ? "ready" : "failed"; recomputeAll(); });
+  loadScriptCascade([
+    "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js",
+    "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
+    "https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"
+  ], (ok)=>{ xlsxLibStatus = ok ? "ready" : "failed"; });
+
+  // ---------- state ----------
+  let stockIdCounter = 0;
+  const DEFAULT_SECTOR_REF = "Financials:22\nIndustrials:15\nConsumer Staples:12\nInformation Technology:12\nHealth Care:8\nConsumer Discretionary:8\nMaterials:8\nUtilities:5\nEnergy:4\nCommunication Services:3\nReal Estate:3";
+  let stocks = [];
+  let charts = {sml:null, riskReturn:null, sector:null};
+
+  // ---------- math helpers ----------
+  function parseNums(str){
+    if(!str) return [];
+    return str.split(/[\s,]+/).map(s=>s.trim()).filter(s=>s.length>0).map(Number).filter(n=>!isNaN(n));
+  }
+  // Extracts a price series from an array of rows (each row an array of cell
+  // values). Looks for a close/price/收盘 column; if none found, falls back to
+  // the last numeric field on each row. Auto-detects and skips a header row.
+  function extractPricesFromRows(rows){
+    if(!rows || rows.length===0) return [];
+    const firstRowFields = (rows[0]||[]).map(f=> (f===undefined||f===null) ? "" : String(f).trim());
+    const headerLower = firstRowFields.map(f=>f.toLowerCase());
+    const candidates = ["adj close","adjclose","close","收盘价","收盘","price"];
+    let colIndex = -1;
+    headerLower.forEach((h,i)=>{ if(colIndex===-1 && candidates.some(c=>h.includes(c))) colIndex=i; });
+    let hasHeader;
+    if(colIndex!==-1){
+      hasHeader = true;
+    } else {
+      const lastField = firstRowFields[firstRowFields.length-1] || "";
+      const cleaned = lastField.replace(/[^0-9.\-]/g,"");
+      hasHeader = (cleaned==="" || isNaN(Number(cleaned)));
+    }
+    const dataRows = hasHeader ? rows.slice(1) : rows;
+    const prices = [];
+    dataRows.forEach(row=>{
+      const fields = (row||[]).map(f=> (f===undefined||f===null) ? "" : String(f).trim());
+      let val = NaN;
+      if(colIndex!==-1 && fields[colIndex]!==undefined){
+        const cleaned = fields[colIndex].replace(/[^0-9.\-]/g,"");
+        if(cleaned!=="") val = Number(cleaned);
+      }
+      if(isNaN(val)){
+        for(let i=fields.length-1;i>=0;i--){
+          const cleaned = (fields[i]||"").replace(/[^0-9.\-]/g,"");
+          if(cleaned!==""){ const num=Number(cleaned); if(!isNaN(num)){ val=num; break; } }
+        }
+      }
+      if(!isNaN(val)) prices.push(val);
+    });
+    return prices;
+  }
+  function extractPricesFromCsv(text){
+    const rows = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0).map(l=>l.split(","));
+    return extractPricesFromRows(rows);
+  }
+  function extractRowsFromHtmlTable(html){
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const table = doc.querySelector("table");
+    if(!table) return [];
+    const rows = [];
+    table.querySelectorAll("tr").forEach(tr=>{
+      const cells = Array.from(tr.querySelectorAll("th,td")).map(td=>td.textContent.trim());
+      if(cells.length) rows.push(cells);
+    });
+    return rows;
+  }
+  // Sets a status tag's text and color state (ok/warn/err/none) via classList only,
+  // so it never wipes out an identifying class the way a raw className overwrite
+  // did previously (that exact mistake once broke calcTag's status updates).
+  function setTagStatus(el, text, state){
+    el.textContent = text;
+    el.classList.remove("ok","warn","err");
+    if(state) el.classList.add(state);
+  }
+  function wireCsvUpload(inputEl, statusEl, onPrices){
+    inputEl.addEventListener("change", ()=>{
+      const file = inputEl.files && inputEl.files[0];
+      if(!file) return;
+      const name = file.name.toLowerCase();
+      const isExcel = name.endsWith(".xlsx") || name.endsWith(".xls");
+      const reader = new FileReader();
+      reader.onerror = ()=>{
+        setTagStatus(statusEl, "file read error", "err");
+      };
+      if(isExcel){
+        reader.onload = (e)=>{
+          const buffer = e.target.result;
+          let prices = [];
+          let sourceLabel = "";
+          // attempt 1: real binary Excel workbook
+          try{
+            if(typeof XLSX !== "undefined"){
+              const data = new Uint8Array(buffer);
+              const wb = XLSX.read(data, {type:"array"});
+              const sheetName = wb.SheetNames[0];
+              const ws = wb.Sheets[sheetName];
+              const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:""})
+                .filter(r=> r.some(c=> String(c).trim()!==""));
+              prices = extractPricesFromRows(rows);
+              if(prices.length>=2) sourceLabel = 'sheet "'+sheetName+'"';
+            }
+          } catch(err){ /* not a real binary workbook — fall through below */ }
+          // attempt 2 & 3: many "export to Excel" buttons on finance sites actually
+          // produce an HTML table or a plain CSV saved with an .xlsx/.xls extension
+          if(prices.length<2){
+            let text = "";
+            try{ text = new TextDecoder("utf-8").decode(new Uint8Array(buffer)); }
+            catch(err){ text = ""; }
+            if(text){
+              if(/<table/i.test(text)){
+                try{
+                  const rows = extractRowsFromHtmlTable(text);
+                  const p = extractPricesFromRows(rows);
+                  if(p.length>=2){ prices = p; sourceLabel = "HTML table in the file"; }
+                } catch(err){ /* ignore */ }
+              }
+              if(prices.length<2){
+                const p = extractPricesFromCsv(text);
+                if(p.length>=2){ prices = p; sourceLabel = sourceLabel || "file text"; }
+              }
+            }
+          }
+          if(prices.length<2){
+            setTagStatus(statusEl, "couldn't find prices — try re-exporting as .csv", "err");
+            return;
+          }
+          setTagStatus(statusEl, prices.length+" prices loaded"+(sourceLabel? " ("+sourceLabel+")":""), "ok");
+          onPrices(prices);
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        reader.onload = (e)=>{
+          const prices = extractPricesFromCsv(String(e.target.result));
+          if(prices.length<2){
+            setTagStatus(statusEl, "couldn't read prices from file", "err");
+            return;
+          }
+          setTagStatus(statusEl, prices.length+" prices loaded", "ok");
+          onPrices(prices);
+        };
+        reader.readAsText(file);
+      }
+    });
+  }
+
+  function returnsFromPrices(prices){
+    const r=[];
+    for(let i=1;i<prices.length;i++){
+      if(prices[i-1]!==0) r.push((prices[i]-prices[i-1])/prices[i-1]);
+    }
+    return r;
+  }
+  function mean(arr){ return arr.length? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+  function variance(arr){
+    if(arr.length===0) return 0;
+    const m=mean(arr);
+    return arr.reduce((a,b)=>a+(b-m)*(b-m),0)/arr.length;
+  }
+  function covariance(a,b){
+    const n=Math.min(a.length,b.length);
+    if(n===0) return 0;
+    const ma=mean(a.slice(0,n)), mb=mean(b.slice(0,n));
+    let s=0;
+    for(let i=0;i<n;i++) s+=(a[i]-ma)*(b[i]-mb);
+    return s/n;
+  }
+  function fmtPct(x,d=2){ return (isFinite(x)? x.toFixed(d):"–")+"%"; }
+  function fmtNum(x,d=2){ return isFinite(x)? x.toFixed(d): "–"; }
+
+  // ---------- stock model ----------
+  function newStock(overrides){
+    stockIdCounter++;
+    return Object.assign({
+      id:"s"+stockIdCounter,
+      name:"New holding",
+      ticker:"",
+      sector:"",
+      weight:10,
+      mode:"hist", // 'hist' | 'manual'
+      prices:"",
+      manReturn:8,
+      manVol:25,
+      manBeta:1
+    }, overrides||{});
+  }
+
+  function syntheticSeries(seed, n, drift, vol){
+    // simple deterministic pseudo-random walk for demo purposes only
+    let x = seed;
+    function rnd(){ x = (x*9301+49297)%233280; return x/233280; }
+    let p = 100;
+    const arr=[p];
+    for(let i=1;i<n;i++){
+      const shock = (rnd()-0.5)*2*vol + drift;
+      p = Math.max(1, p*(1+shock));
+      arr.push(Number(p.toFixed(2)));
+    }
+    return arr.join(", ");
+  }
+
+  function resetAllData(){
+    stocks = [];
+    document.getElementById("benchName").value = "";
+    document.getElementById("rf").value = "";
+    document.getElementById("mktOverride").value = "";
+    document.getElementById("benchPrices").value = "";
+    document.getElementById("benchCsvUpload").value = "";
+    document.getElementById("benchCsvStatus").textContent = "no file loaded";
+    document.getElementById("benchCsvStatus").className = "tag";
+    document.getElementById("sectorRef").value = DEFAULT_SECTOR_REF;
+    renderStockList();
+    recomputeAll();
+  }
+  // Two-click, in-page confirmation instead of window.confirm() — some sandboxed
+  // previews (including artifact/iframe viewers) silently block native confirm()
+  // dialogs, which would make the button appear to do nothing at all.
+  function wireResetButton(btn){
+    let confirmTimeout = null;
+    const originalText = btn.textContent;
+    btn.addEventListener("click", ()=>{
+      if(btn.classList.contains("confirming")){
+        clearTimeout(confirmTimeout);
+        btn.classList.remove("confirming");
+        btn.textContent = originalText;
+        resetAllData();
+      } else {
+        btn.classList.add("confirming");
+        btn.textContent = "Click again to confirm";
+        confirmTimeout = setTimeout(()=>{
+          btn.classList.remove("confirming");
+          btn.textContent = originalText;
+        }, 4000);
+      }
+    });
+  }
+
+  function loadExampleHoldings(){
+    const benchSeries = syntheticSeries(7, 260, 0.0003, 0.011);
+    document.getElementById("benchPrices").value = benchSeries;
+    if(!document.getElementById("benchName").value.trim()){
+      document.getElementById("benchName").value = "Example Broad Market Index";
+    }
+    stocks = [
+      newStock({name:"Example Holding A", ticker:"TICK-A", sector:"Consumer Staples", weight:40, mode:"hist", prices: syntheticSeries(11, 260, 0.0006, 0.014)}),
+      newStock({name:"Example Holding B", ticker:"TICK-B", sector:"Information Technology", weight:35, mode:"hist", prices: syntheticSeries(23, 260, 0.0009, 0.021)}),
+      newStock({name:"Example Holding C", ticker:"TICK-C", sector:"Financials", weight:25, mode:"hist", prices: syntheticSeries(41, 260, 0.0001, 0.008)})
+    ];
+    renderStockList();
+    recomputeAll();
+  }
+
+  // ---------- rendering: stock list ----------
+  // Sector names for the dropdown are derived from the Section 4 reference
+  // textarea, so the holding list and the sector chart always use the same names.
+  function getSectorRefNames(){
+    const refText = document.getElementById("sectorRef").value;
+    const names = [];
+    refText.split("\n").forEach(line=>{
+      const parts = line.split(":");
+      if(parts.length===2){
+        const k = parts[0].trim();
+        const v = Number(parts[1].trim());
+        if(k && isFinite(v) && !names.includes(k)) names.push(k);
+      }
+    });
+    if(!names.includes("Unclassified")) names.push("Unclassified");
+    return names;
+  }
+  function buildSectorOptionsHtml(currentValue){
+    const names = getSectorRefNames();
+    const placeholder = `<option value="" ${currentValue?"":"selected"}>— Select sector —</option>`;
+    let extra = "";
+    if(currentValue && !names.includes(currentValue)){
+      extra = `<option value="${escapeHtml(currentValue)}" selected>${escapeHtml(currentValue)} (custom)</option>`;
+    }
+    const opts = names.map(n=>`<option value="${escapeHtml(n)}" ${n===currentValue?"selected":""}>${escapeHtml(n)}</option>`).join("");
+    return placeholder + extra + opts;
+  }
+  function refreshAllSectorDropdowns(){
+    stocks.forEach(st=>{
+      const card = document.querySelector(`.stock-card[data-id="${st.id}"]`);
+      if(!card) return;
+      const select = card.querySelector(".f-sector");
+      if(!select) return;
+      select.innerHTML = buildSectorOptionsHtml(st.sector);
+    });
+  }
+  function renderStockList(){
+    const container = document.getElementById("stockList");
+    container.innerHTML = "";
+    stocks.forEach(st=>{
+      const card = document.createElement("div");
+      card.className = "stock-card";
+      card.dataset.id = st.id;
+      card.innerHTML = `
+        <div class="row-top">
+          <div class="names">
+            <input type="text" class="f-name" value="${escapeHtml(st.name)}" placeholder="Name" style="min-width:150px;">
+            <input type="text" class="f-ticker" value="${escapeHtml(st.ticker)}" placeholder="Ticker (any exchange)" style="min-width:90px;">
+            <select class="f-sector" style="min-width:150px;">${buildSectorOptionsHtml(st.sector)}</select>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="tag calcTag">–</span>
+            <button class="danger small removeBtn">Remove</button>
+          </div>
+        </div>
+        <div class="field-row3">
+          <div class="field">
+            <label>Weight %</label>
+            <input type="number" class="f-weight" value="${st.weight}" step="0.5">
+          </div>
+          <div class="field">
+            <label>Mode</label>
+            <div class="mode-toggle">
+              <button class="modeHist ${st.mode==='hist'?'active':''}" type="button">Price history</button>
+              <button class="modeManual ${st.mode==='manual'?'active':''}" type="button">Manual estimate</button>
+            </div>
+          </div>
+          <div class="field"></div>
+        </div>
+        <div class="histBlock" style="${st.mode==='hist'?'':'display:none;'}">
+          <div class="field">
+            <label>Historical prices (same dates/frequency as benchmark)</label>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+              <input type="file" class="f-csv-upload" accept=".csv,.txt,.xlsx,.xls" style="font-family:'IBM Plex Sans',sans-serif;font-size:12px;padding:6px;">
+              <span class="tag csvStatus">no file loaded</span>
+            </div>
+            <textarea class="f-prices" placeholder="Or paste comma/newline separated prices here, e.g. 1680, 1695, 1702, ...">${escapeHtml(st.prices)}</textarea>
+          </div>
+        </div>
+        <div class="manualBlock" style="${st.mode==='manual'?'':'display:none;'}">
+          <div class="field-row3">
+            <div class="field"><label>Expected return, annual %</label><input type="number" class="f-manReturn" value="${st.manReturn}" step="0.5"></div>
+            <div class="field"><label>Volatility, annual %</label><input type="number" class="f-manVol" value="${st.manVol}" step="0.5"></div>
+            <div class="field"><label>Beta</label><input type="number" class="f-manBeta" value="${st.manBeta}" step="0.05"></div>
+          </div>
+        </div>
+        <div class="calc-strip">
+          <div><span class="k">Ann. return</span><span class="calcReturn">–</span></div>
+          <div><span class="k">Ann. volatility</span><span class="calcVol">–</span></div>
+          <div><span class="k">Beta</span><span class="calcBeta">–</span></div>
+          <div><span class="k">Historical avg return</span><span class="calcHist">–</span></div>
+        </div>
+      `;
+      container.appendChild(card);
+
+      // wire events
+      card.querySelector(".f-name").addEventListener("input", e=>{st.name=e.target.value; recomputeAll(false);});
+      card.querySelector(".f-ticker").addEventListener("input", e=>{st.ticker=e.target.value;});
+      card.querySelector(".f-sector").addEventListener("change", e=>{st.sector=e.target.value; recomputeAll(false);});
+      card.querySelector(".f-weight").addEventListener("input", e=>{st.weight=Number(e.target.value)||0; recomputeAll(false);});
+      card.querySelector(".f-prices").addEventListener("input", e=>{st.prices=e.target.value; recomputeAll(false);});
+      wireCsvUpload(card.querySelector(".f-csv-upload"), card.querySelector(".csvStatus"), (prices)=>{
+        st.prices = prices.join(", ");
+        card.querySelector(".f-prices").value = st.prices;
+        recomputeAll();
+      });
+      card.querySelector(".f-manReturn").addEventListener("input", e=>{st.manReturn=Number(e.target.value)||0; recomputeAll(false);});
+      card.querySelector(".f-manVol").addEventListener("input", e=>{st.manVol=Number(e.target.value)||0; recomputeAll(false);});
+      card.querySelector(".f-manBeta").addEventListener("input", e=>{st.manBeta=Number(e.target.value)||0; recomputeAll(false);});
+      card.querySelector(".removeBtn").addEventListener("click", ()=>{
+        stocks = stocks.filter(s=>s.id!==st.id);
+        renderStockList();
+        recomputeAll();
+      });
+      card.querySelector(".modeHist").addEventListener("click", ()=>{
+        st.mode="hist";
+        card.querySelector(".histBlock").style.display="";
+        card.querySelector(".manualBlock").style.display="none";
+        card.querySelector(".modeHist").classList.add("active");
+        card.querySelector(".modeManual").classList.remove("active");
+        recomputeAll();
+      });
+      card.querySelector(".modeManual").addEventListener("click", ()=>{
+        st.mode="manual";
+        card.querySelector(".manualBlock").style.display="";
+        card.querySelector(".histBlock").style.display="none";
+        card.querySelector(".modeManual").classList.add("active");
+        card.querySelector(".modeHist").classList.remove("active");
+        recomputeAll();
+      });
+    });
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- core computation ----------
+  function recomputeAll(fullRerender){
+    if(fullRerender===undefined) fullRerender = true;
+    const banner = document.getElementById("globalBanner");
+    let bannerMsgs = [];
+
+    const rf = Number(document.getElementById("rf").value)||0;
+    const benchPrices = parseNums(document.getElementById("benchPrices").value);
+    const benchReturns = returnsFromPrices(benchPrices);
+    const haveBench = benchReturns.length>=2;
+    const sigmaM = haveBench ? Math.sqrt(variance(benchReturns)*252) : NaN;
+    const histMarketReturn = haveBench ? mean(benchReturns)*252*100 : NaN;
+    const overrideRaw = document.getElementById("mktOverride").value.trim();
+    const marketReturn = overrideRaw!=="" ? Number(overrideRaw) : histMarketReturn;
+
+    // Section 1 live results — populated as soon as there's enough benchmark data,
+    // independent of whether any holding has been added yet.
+    const setBenchStat = (id, val, cls)=>{
+      const el = document.getElementById(id);
+      el.textContent = val;
+      el.className = "v"+(cls?(" "+cls):"");
+    };
+    setBenchStat("benchStatHistReturn", isFinite(histMarketReturn)? fmtPct(histMarketReturn) : "–", isFinite(histMarketReturn)? (histMarketReturn>=0?"gain":"loss") : "");
+    setBenchStat("benchStatVol", haveBench? fmtPct(sigmaM*100) : "–");
+    setBenchStat("benchStatEffective", isFinite(marketReturn)? fmtPct(marketReturn)+(overrideRaw!==""?" (override)":" (historical)") : "–", isFinite(marketReturn)? (marketReturn>=0?"gain":"loss") : "");
+
+    if(!haveBench){
+      bannerMsgs.push("Paste at least 2 benchmark prices to compute beta, CAPM returns, and the market-portfolio verdict.");
+    }
+    if(chartLibStatus==="failed"){
+      bannerMsgs.push("The charting library couldn't load from any CDN (check your internet connection and reload the page) — the beta compass still works, but the SML, risk-return, and sector charts will stay blank.");
+    }
+
+    // per-stock calc
+    stocks.forEach(st=>{
+      st._calc = {status:"insufficient", vol:NaN, beta:NaN, expReturn:NaN, histReturn:NaN};
+      if(st.mode==="manual"){
+        st._calc = {status:"ok", vol:st.manVol, beta:st.manBeta, expReturn: rf + st.manBeta*((isFinite(marketReturn)?marketReturn:rf)-rf), histReturn: st.manReturn, manualOverrideReturn: st.manReturn};
+        return;
+      }
+      const prices = parseNums(st.prices);
+      const rets = returnsFromPrices(prices);
+      if(rets.length<2 || !haveBench){
+        st._calc.status = !haveBench ? "no-benchmark" : "insufficient";
+        return;
+      }
+      const n = Math.min(rets.length, benchReturns.length);
+      const sTail = rets.slice(rets.length-n);
+      const bTail = benchReturns.slice(benchReturns.length-n);
+      const varB = variance(bTail);
+      const beta = varB>0 ? covariance(sTail,bTail)/varB : NaN;
+      const vol = Math.sqrt(variance(sTail)*252)*100;
+      const histReturn = mean(sTail)*252*100;
+      const expReturn = rf + beta*((isFinite(marketReturn)?marketReturn:rf)-rf);
+      st._calc = {
+        status: rets.length===benchReturns.length ? "ok" : "aligned",
+        vol, beta, expReturn, histReturn, n
+      };
+    });
+
+    // update stock card displays
+    stocks.forEach(st=>{
+      const card = document.querySelector(`.stock-card[data-id="${st.id}"]`);
+      if(!card) return;
+      const tag = card.querySelector(".calcTag");
+      const c = st._calc;
+      if(c.status==="ok"){ tag.textContent="OK"; tag.className="tag calcTag ok"; }
+      else if(c.status==="aligned"){ tag.textContent="aligned to shorter series"; tag.className="tag calcTag warn"; }
+      else if(c.status==="no-benchmark"){ tag.textContent="needs benchmark data"; tag.className="tag calcTag err"; }
+      else { tag.textContent="needs price data"; tag.className="tag calcTag err"; }
+
+      card.querySelector(".calcReturn").textContent = isFinite(c.expReturn)? fmtPct(c.expReturn):"–";
+      card.querySelector(".calcReturn").parentElement.querySelector(".calcReturn").classList.remove("up","down");
+      if(isFinite(c.expReturn)) card.querySelector(".calcReturn").classList.add(c.expReturn>=0?"up":"down");
+      card.querySelector(".calcVol").textContent = isFinite(c.vol)? fmtPct(c.vol):"–";
+      card.querySelector(".calcBeta").textContent = isFinite(c.beta)? fmtNum(c.beta):"–";
+      card.querySelector(".calcHist").textContent = isFinite(c.histReturn)? fmtPct(c.histReturn):"–";
+      if(isFinite(c.histReturn)){
+        card.querySelector(".calcHist").classList.remove("up","down");
+        card.querySelector(".calcHist").classList.add(c.histReturn>=0?"up":"down");
+      }
+    });
+
+    // portfolio aggregation (only include stocks with usable calc + positive weight)
+    const usable = stocks.filter(s=> s.weight>0 && isFinite(s._calc.expReturn) && isFinite(s._calc.vol) && isFinite(s._calc.beta));
+    const totalWeight = usable.reduce((a,s)=>a+s.weight,0);
+
+    if(stocks.length===0){
+      bannerMsgs.push("Add at least one holding in Section 2 — the results below stay empty until there's something to evaluate.");
+    } else if(stocks.every(s=>s.weight<=0)){
+      bannerMsgs.push("Every holding has a 0% weight, so none are included in the portfolio calculation yet — enter a Weight % for at least one holding.");
+    } else if(usable.length===0){
+      bannerMsgs.push("None of your holdings have complete data yet — check the status tag on each holding card (it should say \"OK\"; anything else means it's missing price history, a matching benchmark, or a weight).");
+    }
+
+    let portfolio = null;
+    if(usable.length>0 && totalWeight>0){
+      const w = usable.map(s=>s.weight/totalWeight);
+      const beta = usable.reduce((a,s,i)=>a+w[i]*s._calc.beta,0);
+      const expReturn = usable.reduce((a,s,i)=>a+w[i]*s._calc.expReturn,0);
+      let varP = NaN;
+      if(isFinite(sigmaM)){
+        const sigmaM2 = sigmaM*sigmaM;
+        const idio = usable.reduce((a,s,i)=>a+w[i]*w[i]*Math.pow(s._calc.vol/100,2),0);
+        const sysAdj = sigmaM2*(beta*beta - usable.reduce((a,s,i)=>a+w[i]*w[i]*s._calc.beta*s._calc.beta,0));
+        varP = idio + sysAdj;
+        if(varP<0) varP = idio; // guard against numerical edge cases with manual entries
+      }
+      const volP = isFinite(varP)? Math.sqrt(Math.max(varP,0))*100 : NaN;
+      const sharpe = isFinite(volP)&&volP>0 ? (expReturn-rf)/volP : NaN;
+      const corr = (isFinite(sigmaM)&&volP>0)? Math.max(-1,Math.min(1, beta*sigmaM/(volP/100))) : NaN;
+      const r2 = isFinite(corr)? corr*corr : NaN;
+      const hhi = w.reduce((a,wi)=>a+wi*wi,0);
+      portfolio = {expReturn, volP, beta, sharpe, r2, hhi, weightSum:totalWeight, n:usable.length};
+    }
+
+    if(totalWeight>0 && Math.abs(totalWeight-100)>1){
+      bannerMsgs.push(`Weights sum to ${totalWeight.toFixed(1)}% — calculations below normalize automatically, but check your inputs.`);
+    }
+
+    if(bannerMsgs.length){ banner.textContent = bannerMsgs.join(" "); banner.classList.add("show"); }
+    else { banner.classList.remove("show"); }
+
+    updateStatCards(portfolio, rf);
+    updateVerdict(portfolio);
+    updateCharts(usable, portfolio, rf, marketReturn, sigmaM);
+  }
+
+  function updateStatCards(p, rf){
+    const set = (id,val,cls)=>{
+      const el = document.getElementById(id);
+      el.textContent = val;
+      el.className = "v"+(cls?(" "+cls):"");
+    };
+    if(!p){
+      ["statReturn","statVol","statSharpe","statBeta","statR2","statHHI"].forEach(id=>set(id,"–"));
+      return;
+    }
+    set("statReturn", fmtPct(p.expReturn), p.expReturn>=0?"gain":"loss");
+    set("statVol", fmtPct(p.volP));
+    set("statSharpe", fmtNum(p.sharpe));
+    set("statBeta", fmtNum(p.beta));
+    set("statR2", isFinite(p.r2)? fmtNum(p.r2*100,1)+"%":"–");
+    set("statHHI", isFinite(p.hhi)? fmtNum(p.hhi*10000,0):"–");
+    document.getElementById("statHHI").title = "HHI on a 0–10,000 scale (index-fund style diversification is typically well under 1,500)";
+  }
+
+  function updateVerdict(p){
+    const badge = document.getElementById("verdictBadge");
+    const list = document.getElementById("verdictList");
+    list.innerHTML = "";
+    if(!p || !isFinite(p.beta) || !isFinite(p.hhi)){
+      badge.textContent = "Add holdings and benchmark data to see a verdict";
+      badge.style.background = "var(--panel)"; badge.style.color = "var(--muted)"; badge.style.border="1px solid var(--line)";
+      return;
+    }
+    const betaDiff = Math.abs(p.beta-1);
+    const hhiPts = p.hhi*10000;
+    const r2 = isFinite(p.r2)? p.r2 : 0;
+
+    let verdict, color;
+    if(betaDiff<0.1 && hhiPts<1500 && r2>0.75){
+      verdict = "Closely tracks the market — behaves like a market portfolio"; color = "var(--gain)";
+    } else if(betaDiff<0.25 && hhiPts<2500){
+      verdict = "Broadly market-like, with a meaningful active tilt"; color = "var(--gold)";
+    } else {
+      verdict = "Concentrated / active portfolio — diverges from the market"; color = "var(--loss)";
+    }
+    badge.textContent = verdict;
+    badge.style.background = "transparent"; badge.style.color = color; badge.style.border = "1px solid "+color;
+
+    const items = [];
+    items.push(`Beta is ${fmtNum(p.beta)} (${betaDiff<0.1?"within 0.1 of":betaDiff<0.25?"within 0.25 of":"more than 0.25 from"} the market's 1.0).`);
+    items.push(`Concentration (HHI) is ${fmtNum(hhiPts,0)} on a 0–10,000 scale across ${p.n} priced holding(s) — ${hhiPts<1500?"low, index-like diversification":hhiPts<2500?"moderate concentration":"high concentration in a few names"}.`);
+    items.push(`R² vs. the benchmark is ${fmtNum(r2*100,1)}% — ${r2>0.75?"most of the portfolio's movement is explained by the market":r2>0.5?"the market explains a moderate share of movement":"idiosyncratic, stock-specific risk dominates"}.`);
+    items.forEach(t=>{ const li=document.createElement("li"); li.textContent=t; list.appendChild(li); });
+  }
+
+  // ---------- beta gauge (SVG) ----------
+  function polarToCartesian(cx,cy,r,angleDeg){
+    const a = angleDeg*Math.PI/180;
+    return {x: cx + r*Math.cos(a), y: cy - r*Math.sin(a)};
+  }
+  function describeArc(cx,cy,r,startAngle,endAngle){
+    const start = polarToCartesian(cx,cy,r,startAngle);
+    const end = polarToCartesian(cx,cy,r,endAngle);
+    const largeArc = Math.abs(startAngle-endAngle)<=180 ? 0 : 1;
+    const sweep = startAngle>endAngle ? 1 : 0;
+    return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} ${sweep} ${end.x} ${end.y}`;
+  }
+  function betaToAngle(beta){
+    const b = Math.max(0, Math.min(2, beta));
+    return 180 - 90*b;
+  }
+  function renderGauge(beta){
+    const svg = document.getElementById("betaGauge");
+    const cx=100, cy=105, r=78;
+    const zones = [
+      {from:0, to:0.85, color:"var(--blue)"},
+      {from:0.85, to:1.15, color:"var(--gold)"},
+      {from:1.15, to:2, color:"var(--loss)"}
+    ];
+    let arcs = zones.map(z=>{
+      const a1 = betaToAngle(z.from), a2 = betaToAngle(z.to);
+      return `<path d="${describeArc(cx,cy,r,a1,a2)}" stroke="${z.color}" stroke-width="14" fill="none" stroke-linecap="butt"/>`;
+    }).join("");
+    let ticks = [0,0.5,1,1.5,2].map(v=>{
+      const ang = betaToAngle(v);
+      const p1 = polarToCartesian(cx,cy,r+12,ang);
+      return `<text x="${p1.x}" y="${p1.y}" font-family="IBM Plex Mono, monospace" font-size="9" fill="#8f969d" text-anchor="middle">${v}</text>`;
+    }).join("");
+    const validBeta = isFinite(beta);
+    const needleAng = betaToAngle(validBeta?beta:1);
+    const needleTip = polarToCartesian(cx,cy,r-8,needleAng);
+    const needle = `<line x1="${cx}" y1="${cy}" x2="${needleTip.x}" y2="${needleTip.y}" stroke="${validBeta?'#ece8df':'#555'}" stroke-width="3" stroke-linecap="round"/>`;
+    const hub = `<circle cx="${cx}" cy="${cy}" r="5" fill="${validBeta?'#ece8df':'#555'}"/>`;
+    const label = `<text x="${cx}" y="${cy+28}" font-family="Space Grotesk, sans-serif" font-size="18" fill="#ece8df" text-anchor="middle" font-weight="600">${validBeta? beta.toFixed(2):"–"}</text>`;
+    const sublabel = `<text x="${cx}" y="${cy+42}" font-family="IBM Plex Mono, monospace" font-size="9" fill="#8f969d" text-anchor="middle">PORTFOLIO BETA</text>`;
+    svg.innerHTML = arcs+ticks+needle+hub+label+sublabel;
+  }
+
+  // ---------- charts ----------
+  function updateCharts(usable, portfolio, rf, marketReturn, sigmaM){
+    renderGauge(portfolio? portfolio.beta : NaN);
+
+    if(typeof Chart === "undefined"){
+      return; // library not loaded yet (or failed) — banner already explains this
+    }
+
+    // SML chart: x=beta, y=expected return
+    const smlPoints = usable.map(s=>({x:s._calc.beta, y:s._calc.expReturn, label:s.name}));
+    const portfolioPoint = portfolio? [{x:portfolio.beta, y:portfolio.expReturn, label:"Portfolio"}] : [];
+    const marketPoint = isFinite(marketReturn) ? [{x:1, y:marketReturn, label:"Market"}] : [];
+    let lineMin=0, lineMax=2;
+    const smlLine = isFinite(marketReturn) ? [{x:0,y:rf},{x:2,y:rf+2*(marketReturn-rf)}] : [];
+
+    const ctxSml = document.getElementById("smlChart");
+    try{
+      if(charts.sml) charts.sml.destroy();
+      charts.sml = new Chart(ctxSml, {
+        type:"scatter",
+        data:{datasets:[
+          {label:"Holdings", data:smlPoints, backgroundColor:"#3e7c99", pointRadius:5},
+          {label:"Portfolio", data:portfolioPoint, backgroundColor:"#c9a227", pointRadius:7, pointStyle:"rectRot"},
+          {label:"Market", data:marketPoint, backgroundColor:"#d6473c", pointRadius:6, pointStyle:"triangle"},
+          {label:"SML (CAPM line)", data:smlLine, type:"line", borderColor:"#555f66", borderDash:[4,4], pointRadius:0, fill:false}
+        ]},
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          scales:{
+            x:{title:{display:true,text:"Beta",color:"#8f969d"}, ticks:{color:"#8f969d"}, grid:{color:"#282e33"}},
+            y:{title:{display:true,text:"Expected return %",color:"#8f969d"}, ticks:{color:"#8f969d"}, grid:{color:"#282e33"}}
+          },
+          plugins:{legend:{labels:{color:"#ece8df", font:{size:11}}},
+            tooltip:{callbacks:{label:(ctx)=>{
+              const d=ctx.raw; return (d.label||ctx.dataset.label)+": β "+d.x.toFixed(2)+", "+d.y.toFixed(1)+"%";
+            }}}
+          }
+        }
+      });
+    } catch(err){ console.error("SML chart failed:", err); }
+
+    // risk-return chart: x=vol, y=return
+    const rrPoints = usable.map(s=>({x:s._calc.vol, y:s._calc.expReturn, label:s.name}));
+    const rrPortfolio = portfolio? [{x:portfolio.volP, y:portfolio.expReturn, label:"Portfolio"}] : [];
+    const rrMarket = isFinite(sigmaM) ? [{x:sigmaM*100, y: isFinite(marketReturn)?marketReturn:NaN, label:"Market"}] : [];
+    const ctxRr = document.getElementById("riskReturnChart");
+    try{
+      if(charts.riskReturn) charts.riskReturn.destroy();
+      charts.riskReturn = new Chart(ctxRr, {
+        type:"scatter",
+        data:{datasets:[
+          {label:"Holdings", data:rrPoints, backgroundColor:"#3e7c99", pointRadius:5},
+          {label:"Portfolio", data:rrPortfolio, backgroundColor:"#c9a227", pointRadius:7, pointStyle:"rectRot"},
+          {label:"Market", data:rrMarket, backgroundColor:"#d6473c", pointRadius:6, pointStyle:"triangle"}
+        ]},
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          scales:{
+            x:{title:{display:true,text:"Volatility % (annualized)",color:"#8f969d"}, ticks:{color:"#8f969d"}, grid:{color:"#282e33"}},
+            y:{title:{display:true,text:"Expected return %",color:"#8f969d"}, ticks:{color:"#8f969d"}, grid:{color:"#282e33"}}
+          },
+          plugins:{legend:{labels:{color:"#ece8df", font:{size:11}}}}
+        }
+      });
+    } catch(err){ console.error("Risk-return chart failed:", err); }
+
+    // sector chart
+    const refText = document.getElementById("sectorRef").value;
+    const refMap = {};
+    refText.split("\n").forEach(line=>{
+      const parts = line.split(":");
+      if(parts.length===2){
+        const k = parts[0].trim(); const v = Number(parts[1].trim());
+        if(k && isFinite(v)) refMap[k]=v;
+      }
+    });
+    const portMap = {};
+    const denom = usable.reduce((a,s)=>a+s.weight,0) || 1;
+    usable.forEach(s=>{
+      const sec = s.sector.trim() || "Unclassified";
+      portMap[sec] = (portMap[sec]||0) + (s.weight/denom*100);
+    });
+    const allSectors = Array.from(new Set([...Object.keys(refMap), ...Object.keys(portMap)]));
+    const ctxSec = document.getElementById("sectorChart");
+    try{
+      if(charts.sector) charts.sector.destroy();
+      charts.sector = new Chart(ctxSec, {
+        type:"bar",
+        data:{
+          labels:allSectors,
+          datasets:[
+            {label:"Portfolio", data:allSectors.map(s=>portMap[s]||0), backgroundColor:"#c9a227"},
+            {label:"Reference", data:allSectors.map(s=>refMap[s]||0), backgroundColor:"#3e7c99"}
+          ]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          scales:{
+            x:{ticks:{color:"#8f969d", font:{size:10}}, grid:{display:false}},
+            y:{title:{display:true,text:"Weight %",color:"#8f969d"}, ticks:{color:"#8f969d"}, grid:{color:"#282e33"}}
+          },
+          plugins:{legend:{labels:{color:"#ece8df", font:{size:11}}}}
+        }
+      });
+    } catch(err){ console.error("Sector chart failed:", err); }
+  }
+
+  // ---------- wiring ----------
+  document.getElementById("addStockBtn").addEventListener("click", ()=>{
+    stocks.push(newStock({}));
+    renderStockList();
+    recomputeAll();
+  });
+  document.getElementById("loadExampleBtn").addEventListener("click", loadExampleHoldings);
+  wireResetButton(document.getElementById("resetAllBtn"));
+  wireResetButton(document.getElementById("resetAllBtnTop"));
+  document.getElementById("normalizeBtn").addEventListener("click", ()=>{
+    const total = stocks.reduce((a,s)=>a+s.weight,0);
+    if(total>0){
+      stocks.forEach(s=> s.weight = Number((s.weight/total*100).toFixed(2)));
+      renderStockList();
+      recomputeAll();
+    }
+  });
+  ["rf","benchPrices","mktOverride","benchName"].forEach(id=>{
+    document.getElementById(id).addEventListener("input", ()=>recomputeAll());
+  });
+  document.getElementById("sectorRef").addEventListener("input", ()=>{
+    refreshAllSectorDropdowns();
+    recomputeAll();
+  });
+
+  wireCsvUpload(document.getElementById("benchCsvUpload"), document.getElementById("benchCsvStatus"), (prices)=>{
+    document.getElementById("benchPrices").value = prices.join(", ");
+    recomputeAll();
+  });
+
+  // initial render
+  renderStockList();
+  recomputeAll();
+})();
+</script>
+</body>
+</html>
