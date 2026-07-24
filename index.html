@@ -10,17 +10,17 @@
 
 <style>
   :root{
-    --bg:#14171a;
-    --panel:#1b1f22;
-    --panel-2:#20252a;
-    --line:#33393f;
-    --line-soft:#282e33;
-    --text:#ece8df;
-    --muted:#8f969d;
-    --gain:#2e9b62;   /* green = positive/gain — standard convention outside Greater China */
-    --loss:#d6473c;   /* red = negative/loss — standard convention outside Greater China */
-    --gold:#c9a227;
-    --blue:#3e7c99;
+    --bg:#F7F5EE;
+    --panel:#FFFFFF;
+    --panel-2:#F1EDE2;
+    --line:#DAD3C0;
+    --line-soft:#E8E2D2;
+    --text:#211E1A;
+    --muted:#6B6459;
+    --gain:#1E8F52;   /* green = positive/gain — standard convention outside Greater China */
+    --loss:#C0392B;   /* red = negative/loss — standard convention outside Greater China */
+    --gold:#A9791A;
+    --blue:#2E6B85;
     --radius:12px;
   }
   *{box-sizing:border-box;}
@@ -100,7 +100,7 @@
   .verdict ul{margin:8px 0 0;padding-left:18px;font-size:13px;color:var(--muted);}
   .verdict li{margin-bottom:4px;}
 
-  .banner{background:rgba(201,162,39,0.08);border:1px solid var(--gold);color:var(--gold);border-radius:8px;padding:10px 14px;font-size:12.5px;margin-bottom:16px;display:none;}
+  .banner{background:rgba(169,121,26,0.10);border:1px solid var(--gold);color:var(--gold);border-radius:8px;padding:10px 14px;font-size:12.5px;margin-bottom:16px;display:none;}
   .banner.show{display:block;}
 
   canvas{max-width:100%;}
@@ -858,15 +858,15 @@ Real Estate:3</textarea>
     let ticks = [0,0.5,1,1.5,2].map(v=>{
       const ang = betaToAngle(v);
       const p1 = polarToCartesian(cx,cy,r+12,ang);
-      return `<text x="${p1.x}" y="${p1.y}" font-family="IBM Plex Mono, monospace" font-size="9" fill="#8f969d" text-anchor="middle">${v}</text>`;
+      return `<text x="${p1.x}" y="${p1.y}" font-family="IBM Plex Mono, monospace" font-size="9" fill="#6B6459" text-anchor="middle">${v}</text>`;
     }).join("");
     const validBeta = isFinite(beta);
     const needleAng = betaToAngle(validBeta?beta:1);
     const needleTip = polarToCartesian(cx,cy,r-8,needleAng);
-    const needle = `<line x1="${cx}" y1="${cy}" x2="${needleTip.x}" y2="${needleTip.y}" stroke="${validBeta?'#ece8df':'#555'}" stroke-width="3" stroke-linecap="round"/>`;
-    const hub = `<circle cx="${cx}" cy="${cy}" r="5" fill="${validBeta?'#ece8df':'#555'}"/>`;
-    const label = `<text x="${cx}" y="${cy+28}" font-family="Space Grotesk, sans-serif" font-size="18" fill="#ece8df" text-anchor="middle" font-weight="600">${validBeta? beta.toFixed(2):"–"}</text>`;
-    const sublabel = `<text x="${cx}" y="${cy+42}" font-family="IBM Plex Mono, monospace" font-size="9" fill="#8f969d" text-anchor="middle">PORTFOLIO BETA</text>`;
+    const needle = `<line x1="${cx}" y1="${cy}" x2="${needleTip.x}" y2="${needleTip.y}" stroke="${validBeta?'#211E1A':'#B9AF9C'}" stroke-width="3" stroke-linecap="round"/>`;
+    const hub = `<circle cx="${cx}" cy="${cy}" r="5" fill="${validBeta?'#211E1A':'#B9AF9C'}"/>`;
+    const label = `<text x="${cx}" y="${cy+28}" font-family="Space Grotesk, sans-serif" font-size="18" fill="#211E1A" text-anchor="middle" font-weight="600">${validBeta? beta.toFixed(2):"–"}</text>`;
+    const sublabel = `<text x="${cx}" y="${cy+42}" font-family="IBM Plex Mono, monospace" font-size="9" fill="#6B6459" text-anchor="middle">PORTFOLIO BETA</text>`;
     svg.innerHTML = arcs+ticks+needle+hub+label+sublabel;
   }
 
@@ -891,19 +891,19 @@ Real Estate:3</textarea>
       charts.sml = new Chart(ctxSml, {
         type:"scatter",
         data:{datasets:[
-          {label:"Holdings", data:smlPoints, backgroundColor:"#3e7c99", pointRadius:5},
-          {label:"Portfolio", data:portfolioPoint, backgroundColor:"#c9a227", pointRadius:7, pointStyle:"rectRot"},
-          {label:"Market", data:marketPoint, backgroundColor:"#d6473c", pointRadius:6, pointStyle:"triangle"},
-          {label:"SML (CAPM line)", data:smlLine, type:"line", borderColor:"#555f66", borderDash:[4,4], pointRadius:0, fill:false}
+          {label:"Holdings", data:smlPoints, backgroundColor:"#2E6B85", pointRadius:5},
+          {label:"Portfolio", data:portfolioPoint, backgroundColor:"#A9791A", pointRadius:7, pointStyle:"rectRot"},
+          {label:"Market", data:marketPoint, backgroundColor:"#C0392B", pointRadius:6, pointStyle:"triangle"},
+          {label:"SML (CAPM line)", data:smlLine, type:"line", borderColor:"#9B9384", borderDash:[4,4], pointRadius:0, fill:false}
         ]},
         options:{
           responsive:true,
           maintainAspectRatio:false,
           scales:{
-            x:{title:{display:true,text:"Beta",color:"#8f969d"}, ticks:{color:"#8f969d"}, grid:{color:"#282e33"}},
-            y:{title:{display:true,text:"Expected return %",color:"#8f969d"}, ticks:{color:"#8f969d"}, grid:{color:"#282e33"}}
+            x:{title:{display:true,text:"Beta",color:"#6B6459"}, ticks:{color:"#6B6459"}, grid:{color:"#E8E2D2"}},
+            y:{title:{display:true,text:"Expected return %",color:"#6B6459"}, ticks:{color:"#6B6459"}, grid:{color:"#E8E2D2"}}
           },
-          plugins:{legend:{labels:{color:"#ece8df", font:{size:11}}},
+          plugins:{legend:{labels:{color:"#211E1A", font:{size:11}}},
             tooltip:{callbacks:{label:(ctx)=>{
               const d=ctx.raw; return (d.label||ctx.dataset.label)+": β "+d.x.toFixed(2)+", "+d.y.toFixed(1)+"%";
             }}}
@@ -922,18 +922,18 @@ Real Estate:3</textarea>
       charts.riskReturn = new Chart(ctxRr, {
         type:"scatter",
         data:{datasets:[
-          {label:"Holdings", data:rrPoints, backgroundColor:"#3e7c99", pointRadius:5},
-          {label:"Portfolio", data:rrPortfolio, backgroundColor:"#c9a227", pointRadius:7, pointStyle:"rectRot"},
-          {label:"Market", data:rrMarket, backgroundColor:"#d6473c", pointRadius:6, pointStyle:"triangle"}
+          {label:"Holdings", data:rrPoints, backgroundColor:"#2E6B85", pointRadius:5},
+          {label:"Portfolio", data:rrPortfolio, backgroundColor:"#A9791A", pointRadius:7, pointStyle:"rectRot"},
+          {label:"Market", data:rrMarket, backgroundColor:"#C0392B", pointRadius:6, pointStyle:"triangle"}
         ]},
         options:{
           responsive:true,
           maintainAspectRatio:false,
           scales:{
-            x:{title:{display:true,text:"Volatility % (annualized)",color:"#8f969d"}, ticks:{color:"#8f969d"}, grid:{color:"#282e33"}},
-            y:{title:{display:true,text:"Expected return %",color:"#8f969d"}, ticks:{color:"#8f969d"}, grid:{color:"#282e33"}}
+            x:{title:{display:true,text:"Volatility % (annualized)",color:"#6B6459"}, ticks:{color:"#6B6459"}, grid:{color:"#E8E2D2"}},
+            y:{title:{display:true,text:"Expected return %",color:"#6B6459"}, ticks:{color:"#6B6459"}, grid:{color:"#E8E2D2"}}
           },
-          plugins:{legend:{labels:{color:"#ece8df", font:{size:11}}}}
+          plugins:{legend:{labels:{color:"#211E1A", font:{size:11}}}}
         }
       });
     } catch(err){ console.error("Risk-return chart failed:", err); }
@@ -963,18 +963,18 @@ Real Estate:3</textarea>
         data:{
           labels:allSectors,
           datasets:[
-            {label:"Portfolio", data:allSectors.map(s=>portMap[s]||0), backgroundColor:"#c9a227"},
-            {label:"Reference", data:allSectors.map(s=>refMap[s]||0), backgroundColor:"#3e7c99"}
+            {label:"Portfolio", data:allSectors.map(s=>portMap[s]||0), backgroundColor:"#A9791A"},
+            {label:"Reference", data:allSectors.map(s=>refMap[s]||0), backgroundColor:"#2E6B85"}
           ]
         },
         options:{
           responsive:true,
           maintainAspectRatio:false,
           scales:{
-            x:{ticks:{color:"#8f969d", font:{size:10}}, grid:{display:false}},
-            y:{title:{display:true,text:"Weight %",color:"#8f969d"}, ticks:{color:"#8f969d"}, grid:{color:"#282e33"}}
+            x:{ticks:{color:"#6B6459", font:{size:10}}, grid:{display:false}},
+            y:{title:{display:true,text:"Weight %",color:"#6B6459"}, ticks:{color:"#6B6459"}, grid:{color:"#E8E2D2"}}
           },
-          plugins:{legend:{labels:{color:"#ece8df", font:{size:11}}}}
+          plugins:{legend:{labels:{color:"#211E1A", font:{size:11}}}}
         }
       });
     } catch(err){ console.error("Sector chart failed:", err); }
