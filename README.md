@@ -75,4 +75,4 @@ Both libraries are loaded dynamically at runtime with fallbacks across multiple 
 
 ## License
 
-MIT (or update this section to whatever license you prefer).
+MIT.
